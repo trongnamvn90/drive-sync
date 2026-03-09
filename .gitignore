@@ -1,0 +1,13 @@
+# Build
+.build/
+*.xcodeproj/xcuserdata/
+DerivedData/
+
+# macOS
+.DS_Store
+
+# Secrets — never commit
+Sources/DriveSync/Secrets.swift
+
+# Auth tokens
+auth.json
