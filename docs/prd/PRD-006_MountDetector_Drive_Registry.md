@@ -537,6 +537,6 @@ Disconnected:
 
 **Author:** Claude (Minh Thư) — 2026-03-09
 
-## ❌ Implementation Status
+## ⚠️ Implementation Status
 
-**Not started** — PRD written 2026-03-09, awaiting implementation.
+**Implemented (not tested)** — Code written 2026-03-10. MountDetector, DriveRegistry, ExternalDrive structs, AppState wiring, UI updates all done. Needs real-device testing (plug/unplug USB, register/unregister, persistence across restarts).
