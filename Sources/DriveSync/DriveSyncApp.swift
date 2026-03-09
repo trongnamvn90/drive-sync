@@ -13,13 +13,14 @@ struct DriveSyncApp: App {
 
         Settings {
             SettingsView(appState: appDelegate.appState)
-                .onDisappear {
-                    NSApp.setActivationPolicy(.accessory)
-                }
+                .onAppear { appDelegate.openWindowCount += 1 }
+                .onDisappear { appDelegate.windowClosed() }
         }
 
         Window("About DriveSync", id: "about") {
             AboutView()
+                .onAppear { appDelegate.openWindowCount += 1 }
+                .onDisappear { appDelegate.windowClosed() }
         }
         .defaultSize(width: 320, height: 400)
         .windowResizability(.contentSize)
@@ -50,8 +51,20 @@ struct MenuBarIcon: View {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let appState = AppState()
+    var openWindowCount = 0
+
+    func windowClosed() {
+        openWindowCount -= 1
+        if openWindowCount <= 0 {
+            openWindowCount = 0
+            NSApp.setActivationPolicy(.accessory)
+        }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Set app icon programmatically (SPM builds don't have .app bundle)
+        setAppIcon()
+
         // Wire up GoogleAuthService with real dependencies
         let httpClient = URLSessionHTTPClient()
         let tokenStore = TokenManager()
@@ -81,5 +94,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 await LogManager.shared.flush()
             }
         }
+    }
+
+    private func setAppIcon() {
+        guard let url = Bundle.module.url(forResource: "app_icon", withExtension: "jpg"),
+              let icon = NSImage(contentsOf: url) else { return }
+        icon.size = NSSize(width: 512, height: 512)
+        NSApp.applicationIconImage = icon
     }
 }

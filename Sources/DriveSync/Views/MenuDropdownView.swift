@@ -3,6 +3,7 @@ import SwiftUI
 struct MenuDropdownView: View {
     @Bindable var appState: AppState
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         if appState.googleState != .connected || appState.drives.isEmpty {
@@ -56,6 +57,14 @@ struct MenuDropdownView: View {
         }
 
         Divider()
+
+        Button("About DriveSync") {
+            NSApp.setActivationPolicy(.regular)
+            openWindow(id: "about")
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+            }
+        }
 
         Button("Quit DriveSync") {
             appState.stopIconCycling()

@@ -3,6 +3,14 @@ import SwiftUI
 struct AboutView: View {
     @State private var showLicenses = false
 
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+    }
+
+    private var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             Spacer()
@@ -25,18 +33,18 @@ struct AboutView: View {
             Text("DriveSync")
                 .font(.title.bold())
 
-            Text("Version 1.0.0")
+            Text("Version \(appVersion) (\(buildNumber))")
                 .foregroundStyle(.secondary)
+
+            Text("Auto-sync external drives with Google Drive")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
 
             Divider()
                 .frame(width: 180)
 
             VStack(spacing: 4) {
-                HStack(spacing: 4) {
-                    Text("rclone:")
-                        .foregroundStyle(.secondary)
-                    Text("v1.68.0")
-                }
                 HStack(spacing: 4) {
                     Text("macOS:")
                         .foregroundStyle(.secondary)
@@ -48,12 +56,12 @@ struct AboutView: View {
             Divider()
                 .frame(width: 180)
 
-            Text("© 2026 Zorro")
+            Text("Made with \u{2764}\u{FE0F} by Zorro")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Link("github.com/zorro/drive-sync",
-                 destination: URL(string: "https://github.com/zorro/drive-sync")!)
+            Link("github.com/trongnamvn90/drive-sync",
+                 destination: URL(string: "https://github.com/trongnamvn90/drive-sync")!)
                 .font(.caption)
 
             Button("Licenses") {
@@ -78,7 +86,6 @@ struct LicensesView: View {
     private let licenses = [
         ("rclone", "MIT License", "https://github.com/rclone/rclone"),
         ("SwiftUI", "Apple EULA", "https://developer.apple.com"),
-        ("TOMLDecoder", "MIT License", "https://github.com/dduan/TOMLDecoder"),
     ]
 
     var body: some View {
