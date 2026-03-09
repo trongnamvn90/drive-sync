@@ -2,17 +2,14 @@ import SwiftUI
 
 struct RegisterDriveSheet: View {
     @Binding var isPresented: Bool
-    @State private var selectedDrive = 1
-    @State private var label = ""
-    @State private var formatDrive = false
-    @State private var volumeName = ""
-    @State private var filesystem = "exFAT"
-    @State private var syncMethod = "Merge both"
+    var appState: AppState
 
-    private let mockDrives = [
-        (name: "ZORRO", fs: "exFAT", size: "500GB", uuid: "A1B2C3D4"),
-        (name: "BACKUP", fs: "APFS", size: "1TB", uuid: "X9Y8Z7W6"),
-    ]
+    @State private var availableDrives: [ExternalDrive] = []
+    @State private var selectedDriveId: String?
+    @State private var label = ""
+    @State private var loading = true
+    @State private var registering = false
+    @State private var errorMessage: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -23,94 +20,112 @@ struct RegisterDriveSheet: View {
 
             Divider()
 
-            // Drive selection
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Select drive:")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                ForEach(0..<mockDrives.count, id: \.self) { idx in
-                    let drive = mockDrives[idx]
-                    HStack {
-                        Image(systemName: selectedDrive == idx ? "largecircle.fill.circle" : "circle")
-                            .foregroundStyle(selectedDrive == idx ? .blue : .secondary)
-                        Image(systemName: "internaldrive")
-                        VStack(alignment: .leading) {
-                            Text("\(drive.name) • \(drive.fs) • \(drive.size)")
-                                .font(.system(.body, design: .monospaced))
-                            Text("UUID: \(drive.uuid)...")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture { selectedDrive = idx }
-                }
-
-                LabeledContent("Label:") {
-                    TextField("My Drive", text: $label)
-                        .frame(width: 200)
-                }
-
-                Toggle("Format drive before registering", isOn: $formatDrive)
-
-                if formatDrive {
-                    GroupBox {
-                        LabeledContent("Volume name:") {
-                            TextField("ZORRO", text: $volumeName)
-                                .frame(width: 150)
-                        }
-                        LabeledContent("Filesystem:") {
-                            Picker("", selection: $filesystem) {
-                                Text("exFAT (cross-platform)").tag("exFAT")
-                                Text("APFS (macOS only)").tag("APFS")
-                            }
-                            .frame(width: 200)
-                        }
-                    }
-                }
+            if loading {
+                ProgressView("Scanning drives...")
+                    .padding(40)
+            } else if availableDrives.isEmpty {
+                emptyState
+            } else {
+                driveList
             }
-            .padding()
-
-            // Warnings area
-            Divider()
-            warningsArea
-                .padding()
 
             Divider()
 
             // Buttons
             HStack {
+                if let errorMessage {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
                 Spacer()
                 Button("Cancel") { isPresented = false }
                     .keyboardShortcut(.cancelAction)
-                Button("Register") { isPresented = false }
+                Button("Register") { registerDrive() }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
+                    .disabled(selectedDriveId == nil || label.isEmpty || registering)
             }
             .padding()
         }
         .frame(width: 440)
+        .task { await loadAvailableDrives() }
+    }
+
+    // MARK: - Subviews
+
+    @ViewBuilder
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "externaldrive.badge.questionmark")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text("No external drives found")
+                .font(.headline)
+            Text("Plug in a drive and try again.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(40)
     }
 
     @ViewBuilder
-    private var warningsArea: some View {
-        if formatDrive {
-            Label("ALL DATA ON DRIVE WILL BE ERASED!", systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.red)
-                .font(.callout.bold())
-        } else if selectedDrive == 0 {
-            // Simulate: UUID already registered
-            VStack(alignment: .leading, spacing: 4) {
-                Label("UUID matches registered \"Home Drive\"", systemImage: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-                Text("Format drive to generate new UUID, or remove old drive in Drives tab")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+    private var driveList: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Select drive:")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            ForEach(availableDrives) { drive in
+                HStack {
+                    Image(systemName: selectedDriveId == drive.id ? "largecircle.fill.circle" : "circle")
+                        .foregroundStyle(selectedDriveId == drive.id ? .blue : .secondary)
+                    Image(systemName: "internaldrive")
+                    VStack(alignment: .leading) {
+                        Text("\(drive.name) • \(drive.filesystem) • \(drive.capacityText)")
+                            .font(.system(.body, design: .monospaced))
+                        Text("UUID: \(drive.id.prefix(8))...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { selectedDriveId = drive.id }
             }
-        } else {
-            Label("Cloud has 12GB → will pull to drive", systemImage: "info.circle")
-                .foregroundStyle(.blue)
+
+            LabeledContent("Label:") {
+                TextField("My Drive", text: $label)
+                    .frame(width: 200)
+            }
+        }
+        .padding()
+    }
+
+    // MARK: - Actions
+
+    private func loadAvailableDrives() async {
+        let connected = MountDetector.shared.connectedDrives
+        let registered = await DriveRegistry.shared.all()
+        let registeredIds = Set(registered.map(\.id))
+
+        availableDrives = connected.filter { !registeredIds.contains($0.id) }
+        loading = false
+    }
+
+    private func registerDrive() {
+        guard let driveId = selectedDriveId else { return }
+        registering = true
+        errorMessage = nil
+
+        Task {
+            do {
+                _ = try await DriveRegistry.shared.register(volumeId: driveId, label: label)
+                await appState.refreshDriveList()
+                isPresented = false
+            } catch {
+                errorMessage = error.localizedDescription
+                registering = false
+            }
         }
     }
 }

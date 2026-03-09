@@ -3,7 +3,6 @@ import SwiftUI
 struct DrivesTab: View {
     @Bindable var appState: AppState
     @State private var showRegisterSheet = false
-    @State private var editingDriveId: UUID?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -12,7 +11,6 @@ struct DrivesTab: View {
                     ForEach(appState.drives) { drive in
                         DriveCard(
                             drive: drive,
-                            onEdit: { editingDriveId = drive.id },
                             onRemove: { removeDrive(drive) }
                         )
                     }
@@ -34,18 +32,20 @@ struct DrivesTab: View {
             }
         }
         .sheet(isPresented: $showRegisterSheet) {
-            RegisterDriveSheet(isPresented: $showRegisterSheet)
+            RegisterDriveSheet(isPresented: $showRegisterSheet, appState: appState)
         }
     }
 
-    private func removeDrive(_ drive: DriveInfo) {
-        appState.drives.removeAll { $0.id == drive.id }
+    private func removeDrive(_ drive: DriveDisplayInfo) {
+        Task {
+            try? await DriveRegistry.shared.unregister(drive.id)
+            await appState.refreshDriveList()
+        }
     }
 }
 
 struct DriveCard: View {
-    let drive: DriveInfo
-    let onEdit: () -> Void
+    let drive: DriveDisplayInfo
     let onRemove: () -> Void
     @State private var showRemoveConfirm = false
 
@@ -62,40 +62,39 @@ struct DriveCard: View {
                     .font(.headline)
 
                 HStack(spacing: 8) {
-                    Text(drive.volumeName)
-                    Text("•")
-                    Text("UUID: \(drive.uuid)...")
+                    if let volumeName = drive.volumeName {
+                        Text(volumeName)
+                        Text("•")
+                    }
+                    Text("UUID: \(drive.shortUUID)...")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-                HStack(spacing: 8) {
-                    Text(drive.filesystem)
-                    Text("•")
-                    Text(drive.capacity)
+                if drive.isConnected {
+                    HStack(spacing: 8) {
+                        if let fs = drive.filesystem { Text(fs) }
+                        if let cap = drive.capacityText {
+                            Text("•")
+                            Text(cap)
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
 
-                Text("Last sync: \(drive.lastSync)")
+                Text("Last sync: \(drive.lastSyncText)")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
 
             Spacer()
 
-            VStack(spacing: 4) {
-                Button { onEdit() } label: {
-                    Image(systemName: "pencil")
-                }
-                .buttonStyle(.borderless)
-
-                Button { showRemoveConfirm = true } label: {
-                    Image(systemName: "trash")
-                        .foregroundStyle(.red)
-                }
-                .buttonStyle(.borderless)
+            Button { showRemoveConfirm = true } label: {
+                Image(systemName: "trash")
+                    .foregroundStyle(.red)
             }
+            .buttonStyle(.borderless)
         }
         .padding(12)
         .background(.quaternary.opacity(0.5))

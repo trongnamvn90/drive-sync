@@ -277,4 +277,22 @@ let keepLogs = max(1, min(365, config.int(section: "app", key: "keep_logs_days")
 
 ---
 
+## ✅ Implementation Status
+
+**Fully implemented** — 2026-03-07
+
+| Item | Status |
+|------|--------|
+| Sync tab UI (Stepper debounce, periodic, Picker on_delete) | ✅ Done |
+| App tab UI (toggles, symlink, log level, keep logs) | ✅ Done |
+| Persist all settings → config.toml via didSet | ✅ Done |
+| Load settings on app startup | ✅ Done |
+| Launch at Login (SMAppService) | ✅ Done |
+| Notifications (UserNotifications permission + helper) | ✅ Done |
+| Open Log File button | ✅ Done |
+| Live logs wired to LogManager AsyncStream | ✅ Done (PRD-005) |
+| Validation clamp (SyncEngine reads) | ⏭️ Deferred — needs SyncEngine (PRD-002) |
+
+---
+
 **Author:** Claude (Minh Thư) — 2026-03-07

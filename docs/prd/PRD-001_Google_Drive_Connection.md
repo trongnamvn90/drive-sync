@@ -401,4 +401,23 @@ Cần testable:
 
 ---
 
+## ✅ Implementation Status
+
+**Fully implemented** — 2026-03-07
+
+| Item | Status |
+|------|--------|
+| OAuth 2.0 flow (POSIX socket callback server) | ✅ Done |
+| Token exchange, refresh, persist (auth.json 0600) | ✅ Done |
+| Email + storage quota + folder list fetch | ✅ Done |
+| GoogleDriveTab UI (3 states: disconnected/connecting/connected) | ✅ Done |
+| Connect / Disconnect / Re-login / Cancel | ✅ Done |
+| Folder picker (Picker dropdown, root-level folders) | ✅ Done |
+| Bandwidth UI (Stepper, persist to config.toml) | ✅ Done |
+| Menu dropdown warning when disconnected | ✅ Done |
+| Scope validation warning (Drive scope check) | ✅ Done |
+| Logging wired (OAuth events → LogManager) | ✅ Done |
+
+---
+
 **Author:** Claude (Minh Thư) — 2026-03-06

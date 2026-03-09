@@ -555,4 +555,25 @@ var logLevel: String {
 
 ---
 
+## ✅ Implementation Status
+
+**Fully implemented** — 2026-03-09
+
+| Item | Status |
+|------|--------|
+| LogManager actor singleton | ✅ Done |
+| File write with buffer (20 entries / 5s flush) | ✅ Done |
+| Log level filtering (reads from ConfigManager) | ✅ Done |
+| AsyncStream + ring buffer (100 entries replay) | ✅ Done |
+| Log cleanup (deleteOldLogs) | ✅ Done |
+| Date rollover (midnight file switch) | ✅ Done |
+| Live logs UI in AppTab (stream, pause/resume, color coding) | ✅ Done |
+| Open Log File (today's file) | ✅ Done |
+| Wire-in: app start/shutdown | ✅ Done |
+| Wire-in: OAuth events (connect/disconnect/re-login/refresh) | ✅ Done |
+| Wire-in: settings changes (all didSet) | ✅ Done |
+| Flush on app shutdown | ✅ Done |
+
+---
+
 **Author:** Claude (Minh Thư) — 2026-03-09

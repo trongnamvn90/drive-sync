@@ -84,6 +84,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Sync launch-at-login with system + request notification permission
         appState.setupOnLaunch()
 
+        // Start mount detection for external drives
+        appState.startMountDetection()
+
         // Log shutdown
         NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification,

@@ -80,7 +80,7 @@ struct MenuDropdownView: View {
         Label(appState.currentState.label, systemImage: appState.currentState.sfSymbol)
             .font(.headline)
         if let drive = appState.drives.first(where: { $0.isConnected }) {
-            Text("\(drive.label) • Synced \(drive.lastSync)")
+            Text("\(drive.label) • Synced \(drive.lastSyncText)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

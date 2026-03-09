@@ -325,4 +325,12 @@ PRD-002: đọc token ← auth.json → rclone config create → rclone.conf
 
 ---
 
+## ❌ Implementation Status
+
+**Not started** — PRD written 2026-03-06, awaiting implementation.
+
+No code exists yet for `RcloneRunner`, `SyncEngine`, or any rclone subprocess integration.
+
+---
+
 **Author:** Claude (Minh Thư) — 2026-03-06

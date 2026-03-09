@@ -53,13 +53,45 @@ enum SyncState: String, CaseIterable {
     }
 }
 
-struct DriveInfo: Identifiable {
-    let id = UUID()
-    var label: String
-    var volumeName: String
-    var uuid: String
-    var filesystem: String
-    var capacity: String
-    var lastSync: String
-    var isConnected: Bool
+struct DriveDisplayInfo: Identifiable, Sendable {
+    let id: String           // volume UUID
+    let label: String
+    let volumeName: String?
+    let filesystem: String?
+    let capacity: Int64?
+    let mountPoint: String?
+    let registeredAt: Date
+    let lastSyncAt: Date?
+    let isConnected: Bool
+
+    var capacityText: String? {
+        guard let capacity else { return nil }
+        return ByteCountFormatter.string(fromByteCount: capacity, countStyle: .file)
+    }
+
+    var lastSyncText: String {
+        guard let lastSyncAt else { return "Never" }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: lastSyncAt, relativeTo: Date())
+    }
+
+    var shortUUID: String {
+        String(id.prefix(8))
+    }
+
+    /// Join registered drive + optional live mount data
+    static func from(registered: RegisteredDrive, mount: ExternalDrive?) -> DriveDisplayInfo {
+        DriveDisplayInfo(
+            id: registered.id,
+            label: registered.label,
+            volumeName: mount?.name,
+            filesystem: mount?.filesystem,
+            capacity: mount?.capacity,
+            mountPoint: mount?.mountPoint,
+            registeredAt: registered.registeredAt,
+            lastSyncAt: registered.lastSyncAt,
+            isConnected: mount != nil
+        )
+    }
 }

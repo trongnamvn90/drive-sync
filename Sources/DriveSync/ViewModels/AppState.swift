@@ -133,19 +133,48 @@ final class AppState {
 
     }
 
-    // Drives
-    var drives: [DriveInfo] = [
-        DriveInfo(
-            label: "Home Drive", volumeName: "ZORRO", uuid: "A1B2C3D4",
-            filesystem: "exFAT", capacity: "500GB",
-            lastSync: "14:32 today", isConnected: true
-        ),
-        DriveInfo(
-            label: "Office Drive", volumeName: "ZORRO", uuid: "E5F6G7H8",
-            filesystem: "exFAT", capacity: "500GB",
-            lastSync: "22:15 yesterday", isConnected: false
-        ),
-    ]
+    // Drives — real data from MountDetector + DriveRegistry
+    var drives: [DriveDisplayInfo] = []
+    private var mountEventTask: Task<Void, Never>?
+
+    func startMountDetection() {
+        MountDetector.shared.start()
+
+        mountEventTask = Task {
+            let stream = MountDetector.shared.events()
+            for await event in stream {
+                switch event {
+                case .mounted(let drive):
+                    await handleDriveMount(drive)
+                case .unmounted:
+                    await refreshDriveList()
+                }
+            }
+        }
+
+        Task { await refreshDriveList() }
+    }
+
+    func refreshDriveList() async {
+        let registered = await DriveRegistry.shared.all()
+        let connected = MountDetector.shared.connectedDrives
+        let connectedById = Dictionary(connected.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+
+        drives = registered.map { reg in
+            DriveDisplayInfo.from(registered: reg, mount: connectedById[reg.id])
+        }
+    }
+
+    private func handleDriveMount(_ drive: ExternalDrive) async {
+        let isRegistered = await DriveRegistry.shared.isRegistered(drive.id)
+        if !isRegistered {
+            sendNotification(
+                title: "Unknown Drive Detected",
+                body: "\(drive.name) (\(drive.filesystem)) — open Settings to register"
+            )
+        }
+        await refreshDriveList()
+    }
 
     // Sync progress
     var syncProgress: Double = 0.45

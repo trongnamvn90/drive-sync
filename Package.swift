@@ -7,7 +7,8 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "DriveSync",
-            resources: [.process("Resources")]
+            resources: [.process("Resources")],
+            linkerSettings: [.linkedFramework("DiskArbitration")]
         )
     ]
 )
