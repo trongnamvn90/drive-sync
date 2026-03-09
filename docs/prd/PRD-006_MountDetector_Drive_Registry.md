@@ -539,4 +539,24 @@ Disconnected:
 
 ## ⚠️ Implementation Status
 
-**Implemented (not tested)** — Code written 2026-03-10. MountDetector, DriveRegistry, ExternalDrive structs, AppState wiring, UI updates all done. Needs real-device testing (plug/unplug USB, register/unregister, persistence across restarts).
+**Partially tested** — Code written 2026-03-10. Bugfix for delayed mount paths pushed same day.
+
+### Test Results (2026-03-10)
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 1 | `swift build` compiles | ✅ Pass | DiskArbitration linked OK |
+| 2 | App launches | ✅ Pass | Menubar icon hiện |
+| 3 | Plug USB → detect | ✅ Pass | Retry mechanism, ExFAT + APFS |
+| 4 | Register drive + JSON persist | ✅ Pass | `~/.config/drivesync/drives.json` |
+| 5 | Connected → green dot, volume info | ❓ Not confirmed | Cần confirm UI hiện xanh |
+| 6 | Eject → gray dot, UUID only | ❓ Not confirmed | Unmount event fire đúng, cần confirm UI |
+| 7 | Unregister → gone from list + JSON | ✅ Pass | |
+| 8 | Unknown drive → macOS notification | ❓ Not tested | Cắm ổ chưa register, check notification |
+| 9 | App restart → persist + connected | ✅ Pass | |
+| 10 | Empty state → menu "No drives registered" | ❓ Not tested | Xóa hết drives rồi check menu |
+
+### Known Issues Fixed
+- DA callbacks fire before mount completes → added retry with fresh `DADiskCreateFromBSDName`
+- APFS synthesized volumes report `internal=true` → parent disk check
+- DA-level filter too restrictive → removed, filter in parse function instead
